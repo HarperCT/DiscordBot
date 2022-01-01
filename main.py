@@ -4,7 +4,6 @@ from discord.ext import commands
 from dotenv import load_dotenv
 import ffmpeg
 
-
 from youtube_player import YTDLSource
 
 load_dotenv()
@@ -13,20 +12,6 @@ intents = discord.Intents().all()
 client = discord.Client(intents=intents)
 bot = commands.Bot(command_prefix='!', intents=intents)
 TOKEN = os.getenv("TOKEN")
-
-
-@client.event
-async def on_ready():
-    print("Logged in as {0.user}".format(client))
-
-
-@client.event
-async def on_message(message):
-    # if message from bot do nothing
-    if message.author == client.user:
-        return
-    if message.content.startswith('!hello'):
-        await message.channel.send('Hello!')
 
 
 @bot.command(name='hello', help='Hello World bot command')
@@ -53,13 +38,14 @@ async def leave(ctx):
         await ctx.send("The bot is not connected to a voice channel.")
 
 
-@bot.command(name='play_song', help='To play song')
+@bot.command(name='play', help='To play song')
 async def play(ctx, url):
-    print(url)
+    server = ctx.message.guild
+    ctx.voice_channel = server.voice_client
+    await ctx.send('Downloading... Please wait...')
 
     async with ctx.typing():
         player = await YTDLSource.from_url(url=url, loop=bot.loop)
-
         ctx.voice_channel.play(player, after=lambda e: print('Player error: %s' % e) if e else None)
         await ctx.send('Now playing: {}'.format(player.title))
 
@@ -79,7 +65,7 @@ async def resume(ctx):
     if voice_client.is_paused():
         await voice_client.resume()
     else:
-        await ctx.send("The bot was not playing anything before this. Use play_song command")
+        await ctx.send("The bot was not playing anything before this. Use !play")
 
 
 @bot.command(name='stop', help='Stops the song')
